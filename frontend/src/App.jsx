@@ -1,30 +1,51 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import LabInput from './components/LabInput'
+import ResultsDisplay from './components/ResultsDisplay'
+import { analyzeLabs } from './api'
 import './App.css'
 
-// Placeholder screen for now. It only pings the backend so I can confirm both
-// servers are running and talking to each other. The lab input form and the
-// results view are built in later steps.
 function App() {
-  const [backendStatus, setBackendStatus] = useState('checking...')
+  const [analysis, setAnalysis] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetch('http://localhost:8000/health')
-      .then((response) => response.json())
-      .then((data) => setBackendStatus(data.status))
-      .catch(() => setBackendStatus('not reachable'))
-  }, [])
+  async function handleAnalyze(labs) {
+    if (labs.length === 0) {
+      setError('Enter at least one test name and value.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      setAnalysis(await analyzeLabs(labs))
+    } catch (failure) {
+      setError(failure.message)
+      setAnalysis(null)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="app">
       <header>
         <h1>Clinical Lab Results Analyzer</h1>
         <p className="subtitle">
-          Classifies lab results as Normal, Warning or Critical and explains why.
+          Classifies lab results as Normal, Warning or Critical against their
+          reference ranges, and explains why.
         </p>
       </header>
 
       <main>
-        <p className="status">Backend: {backendStatus}</p>
+        <LabInput onAnalyze={handleAnalyze} loading={loading} />
+
+        {error && <p className="error">{error}</p>}
+
+        {loading && <p className="loading">Analyzing results...</p>}
+
+        {analysis && !loading && <ResultsDisplay analysis={analysis} />}
       </main>
     </div>
   )
