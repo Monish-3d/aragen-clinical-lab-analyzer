@@ -5,7 +5,9 @@ classifier.py and the prompt says not to change it, so the model cannot make a
 normal result look critical or the other way round.
 """
 
+import asyncio
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,6 +26,13 @@ MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 # Give up on a slow reply instead of leaving the whole request hanging. One
 # model I tried sat there for over a minute before the server timed it out.
 REQUEST_TIMEOUT_MS = 60_000
+
+# The free tier allows only 5 requests per minute per model, so firing every
+# result at once just gets most of them rejected with a 429. A few at a time
+# plus a retry is much better than a burst.
+MAX_CONCURRENT_CALLS = 3
+RETRY_ATTEMPTS = 3
+RETRY_DELAY_SECONDS = 6
 
 # Built once. Without a key it stays None and every result gets the fallback.
 client = (
@@ -88,6 +97,12 @@ def fallback_explanation(classification):
     )
 
 
+def is_rate_limited(error):
+    """A 429 is worth waiting out; other errors are not."""
+    text = str(error)
+    return "429" in text or "RESOURCE_EXHAUSTED" in text
+
+
 def explain_result(classification):
     """Ask Gemini to explain one classified result.
 
@@ -97,30 +112,61 @@ def explain_result(classification):
     if client is None:
         return fallback_explanation(classification)
 
-    try:
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=build_prompt(classification),
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=LabExplanation,
-                # Low temperature so the same result is worded much the same
-                # way each time it is analysed.
-                temperature=0.2,
-                # These are short explanations, so the model does not need to
-                # think for long. On the default setting the same call took
-                # 13 seconds instead of under 3, which adds up when every
-                # result gets its own call.
-                thinking_config=types.ThinkingConfig(thinking_level="low"),
-            ),
-        )
-    except Exception as error:
-        # Printed rather than swallowed silently - a quiet except here hid a
-        # 404 for a retired model and made every result look like a fallback.
-        print(f"Gemini call failed for {classification.test_name}: {error}")
-        return fallback_explanation(classification)
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            return request_explanation(classification)
+        except Exception as error:
+            # The free tier rejects bursts, and the API tells us to wait a few
+            # seconds, so a rate limit is retried rather than given up on.
+            if is_rate_limited(error) and attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(RETRY_DELAY_SECONDS)
+                continue
 
-    # .parsed is None if the reply did not fit the schema.
+            # Printed rather than swallowed silently - a quiet except here hid
+            # a 404 for a retired model and made every result look like a
+            # fallback.
+            print(f"Gemini call failed for {classification.test_name}: {error}")
+            return fallback_explanation(classification)
+
+    return fallback_explanation(classification)
+
+
+async def explain_results(classifications):
+    """Explain several results at once, a few calls at a time.
+
+    Each call takes a few seconds, so they overlap instead of running one after
+    another, but the semaphore keeps the burst small enough for the free tier.
+    """
+    limit = asyncio.Semaphore(MAX_CONCURRENT_CALLS)
+
+    async def explain_one(classification):
+        async with limit:
+            # explain_result is ordinary blocking code, so it goes on a thread.
+            return await asyncio.to_thread(explain_result, classification)
+
+    return await asyncio.gather(*(explain_one(item) for item in classifications))
+
+
+def request_explanation(classification):
+    """One call to Gemini. Raises on failure so the caller can retry."""
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=build_prompt(classification),
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=LabExplanation,
+            # Low temperature so the same result is worded much the same way
+            # each time it is analysed.
+            temperature=0.2,
+            # These are short explanations, so the model does not need to think
+            # for long. On the default setting the same call took 13 seconds
+            # instead of under 3, which adds up when every result gets a call.
+            thinking_config=types.ThinkingConfig(thinking_level="low"),
+        ),
+    )
+
+    # .parsed is None if the reply did not fit the schema. That is not worth
+    # retrying, so it returns the fallback rather than raising.
     explanation = response.parsed
     if not isinstance(explanation, LabExplanation):
         return fallback_explanation(classification)
