@@ -1,0 +1,11 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  background: #f4f6f8;
+  color: #1f2933;
+  line-height: 1.5;
+}

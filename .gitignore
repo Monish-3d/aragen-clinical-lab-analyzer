@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Secrets - the real API key must never be committed
+.env
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
