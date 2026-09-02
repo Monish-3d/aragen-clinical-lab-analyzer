@@ -94,9 +94,6 @@ button.secondary {
   font-size: 13px;
 }
 
-.link-button:disabled {
-  color: #b3bcc5;
-}
 
 /* Messages */
 

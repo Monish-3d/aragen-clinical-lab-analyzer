@@ -107,15 +107,20 @@ function LabInput({ onAnalyze, loading }) {
               placeholder="g/dL"
               aria-label={`Unit for row ${index + 1}`}
             />
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => removeRow(index)}
-              disabled={rows.length === 1}
-              aria-label={`Remove row ${index + 1}`}
-            >
-              Remove
-            </button>
+            {/* Nothing to remove when there is only one row, and a greyed
+                out button that never does anything is just confusing. */}
+            {rows.length > 1 ? (
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => removeRow(index)}
+                aria-label={`Remove row ${index + 1}`}
+              >
+                Remove
+              </button>
+            ) : (
+              <span />
+            )}
           </div>
         ))}
       </div>
