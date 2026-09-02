@@ -4,10 +4,16 @@ Reference ranges are resolved through the MCP server, the severity is decided
 by classifier.py, and only the wording comes from the LLM.
 """
 
-from classifier import classify_lab_result, route_by_severity, summarize
+from classifier import (
+    classify_lab_result,
+    format_number,
+    route_by_severity,
+    summarize,
+)
 from llm import explain_results
 from mcp_client import fetch_references
 from models import AnalyzeResponse, LabResult, Summary
+from reference_data import ReferenceInfo, translate_term
 
 
 async def resolve_references(test_names):
@@ -17,6 +23,10 @@ async def resolve_references(test_names):
     just comes back without a reference, which the classifier reports as
     UNKNOWN instead of failing the whole request.
     """
+    # Nothing to ask about if every test brought its own reference range.
+    if not test_names:
+        return {}
+
     try:
         return await fetch_references(test_names)
     except Exception as error:
@@ -24,16 +34,54 @@ async def resolve_references(test_names):
         return {}
 
 
+def reference_from_input(lab):
+    """Build a reference range out of the columns supplied with the upload.
+
+    Returns None when the caller did not supply one, which is the signal to go
+    and ask the MCP server instead.
+    """
+    if lab.min_reference is not None and lab.max_reference is not None:
+        return ReferenceInfo(
+            test_name=lab.test_name,
+            unit=lab.unit or "",
+            reference_range=lab.reference_range
+            or f"{format_number(lab.min_reference)}-{format_number(lab.max_reference)}",
+            is_numeric=True,
+            min_reference=lab.min_reference,
+            max_reference=lab.max_reference,
+        )
+
+    # Only a text reference, so this is a categorical test like Protein (Strip).
+    if lab.reference_range:
+        return ReferenceInfo(
+            test_name=lab.test_name,
+            unit=lab.unit or "",
+            reference_range=translate_term(lab.reference_range),
+            is_numeric=False,
+        )
+
+    return None
+
+
 async def analyze_labs(labs):
     """Run the full flow over a list of validated LabInput objects."""
-    references = await resolve_references([lab.test_name for lab in labs])
+    supplied = [reference_from_input(lab) for lab in labs]
+
+    # Only the tests that did not bring their own reference range need looking
+    # up through MCP.
+    references = await resolve_references(
+        [lab.test_name for lab, given in zip(labs, supplied) if given is None]
+    )
 
     # CLASSIFY - deterministic, no LLM involved.
     classifications = [
         classify_lab_result(
-            lab.test_name, lab.value, lab.unit, references.get(lab.test_name)
+            lab.test_name,
+            lab.value,
+            lab.unit,
+            given or references.get(lab.test_name),
         )
-        for lab in labs
+        for lab, given in zip(labs, supplied)
     ]
 
     # ROUTE - critical first, then warning, then normal.

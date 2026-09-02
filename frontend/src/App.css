@@ -278,3 +278,39 @@ button.secondary {
     flex-direction: column;
   }
 }
+
+/* CSV upload */
+
+.upload {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #eef2f6;
+}
+
+.upload label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.upload input[type='file'] {
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.hint {
+  margin: 8px 0 0;
+  color: #7b8794;
+  font-size: 12.5px;
+}
+
+.problems {
+  margin: 10px 0 0;
+  padding: 10px 14px 10px 30px;
+  background: #fdf6e3;
+  border: 1px solid #e3cd90;
+  border-radius: 6px;
+  color: #7a5b12;
+  font-size: 13px;
+}

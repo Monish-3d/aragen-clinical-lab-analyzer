@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { readLabCsv } from '../csv'
 
 const EMPTY_ROW = { test_name: '', value: '', unit: '' }
 
 function LabInput({ onAnalyze, loading }) {
   const [rows, setRows] = useState([{ ...EMPTY_ROW }])
+  const [csvProblems, setCsvProblems] = useState([])
+  const [csvError, setCsvError] = useState('')
+  const [csvName, setCsvName] = useState('')
 
   function updateRow(index, field, value) {
     const updated = rows.map((row, position) =>
@@ -20,8 +24,42 @@ function LabInput({ onAnalyze, loading }) {
     setRows(rows.filter((row, position) => position !== index))
   }
 
+  function handleFile(event) {
+    const file = event.target.files[0]
+    if (!file) {
+      return
+    }
+
+    setCsvError('')
+    setCsvProblems([])
+    setCsvName(file.name)
+
+    const reader = new FileReader()
+
+    reader.onload = () => {
+      try {
+        // Bad rows are reported but the good ones are still analysed, so one
+        // broken line does not waste the whole upload.
+        const { labs, problems } = readLabCsv(reader.result)
+        setCsvProblems(problems)
+        onAnalyze(labs)
+      } catch (failure) {
+        setCsvError(failure.message)
+      }
+    }
+
+    reader.onerror = () => setCsvError('Could not read that file.')
+    reader.readAsText(file)
+
+    // Clear the input so picking the same file again still fires onChange.
+    event.target.value = ''
+  }
+
   function handleSubmit(event) {
     event.preventDefault()
+    setCsvError('')
+    setCsvProblems([])
+    setCsvName('')
 
     // Drop rows the user left completely blank, then send the rest. The
     // backend still validates - this only avoids an obvious 422 when someone
@@ -89,6 +127,33 @@ function LabInput({ onAnalyze, loading }) {
         <button type="submit" disabled={loading}>
           {loading ? 'Analyzing...' : 'Analyze'}
         </button>
+      </div>
+
+      <div className="upload">
+        <label htmlFor="csv-file">Or upload a CSV</label>
+        <input
+          id="csv-file"
+          type="file"
+          accept=".csv,text/csv"
+          onChange={handleFile}
+          disabled={loading}
+        />
+        <p className="hint">
+          Needs a Test_Name and Result column. Unit, Reference_Range,
+          Min_Reference and Max_Reference are used if present.
+        </p>
+
+        {csvName && !csvError && <p className="hint">Loaded {csvName}</p>}
+
+        {csvError && <p className="error">{csvError}</p>}
+
+        {csvProblems.length > 0 && (
+          <ul className="problems">
+            {csvProblems.map((problem, index) => (
+              <li key={index}>{problem}</li>
+            ))}
+          </ul>
+        )}
       </div>
     </form>
   )

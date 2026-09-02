@@ -16,6 +16,13 @@ class LabInput(BaseModel):
 
     unit: str | None = None
 
+    # An uploaded CSV can bring its own reference columns. When they are there
+    # they are used instead of the MCP lookup, so a test the dataset does not
+    # know about can still be classified.
+    reference_range: str | None = None
+    min_reference: float | None = None
+    max_reference: float | None = None
+
 
 class AnalyzeRequest(BaseModel):
     """Body of POST /analyze_labs."""
