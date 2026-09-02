@@ -27,6 +27,7 @@ and a suggested next step.
 - Results sorted critical first, with counts per severity
 - AI-written explanation and next step for every result
 - Colour-coded severity, with an icon and a word as well as colour
+- A bar on each numeric result showing where the value falls against its range
 - Errors reported rather than crashed: unknown tests, missing values, wrong
   units, malformed CSVs
 - Classification still works if the LLM is unavailable
@@ -84,7 +85,8 @@ frontend/src/
   App.jsx             page state
   api.js              calls the backend
   csv.js              CSV reading and validation
-  components/         LabInput, ResultsDisplay, SeverityBadge
+  components/         LabInput, ResultsDisplay, SeverityBadge,
+                      RangeIndicator
 test_data/            three synthetic CSVs
 ```
 
@@ -207,6 +209,26 @@ small translation before being compared. That is what makes an English
 Low grades are treated as a warning rather than a critical because the dataset
 does so itself: its only abnormal row is `Eritrosit (Strip) = 1+`, whose
 recommended follow-up is a repeat urine test.
+
+### Showing it on screen
+
+Each numeric result carries a bar marking the reference range and where the
+value sits. The scale extends one whole range width past each limit, which is
+the same measure the first critical rule uses, so a marker at the edge of the
+bar is exactly the point where a warning would become critical. A value further
+out than that sits on the edge rather than vanishing off the end.
+
+Two things worth knowing when reading it:
+
+- The green middle third is always the reference range, whatever the test, so
+  bars for different tests can be compared at a glance.
+- Because the scale is built from the range width, a result that is critical
+  under the *second* rule can still look close to the range. Ferritin 4 is an
+  example: it sits just left of the green zone but is critical, because 11 is
+  more than half of the lower limit of 15. The reason line under the bar says
+  which rule applied.
+
+Categorical tests have no numeric limits, so they have no bar.
 
 ### When a result cannot be classified
 
