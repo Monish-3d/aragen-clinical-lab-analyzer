@@ -21,7 +21,7 @@ from models import LabExplanation
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
 # Give up on a slow reply instead of leaving the whole request hanging. One
 # model I tried sat there for over a minute before the server timed it out.
