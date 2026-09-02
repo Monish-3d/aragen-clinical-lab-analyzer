@@ -1,3 +1,4 @@
+import RangeIndicator from './RangeIndicator'
 import SeverityBadge from './SeverityBadge'
 
 // Some tests (pH, urine strips) have "-" as their unit in the dataset, which
@@ -38,6 +39,16 @@ function ResultsDisplay({ analysis }) {
             <p className="reference">
               Reference range: {result.reference_range} {displayUnit(result.unit)}
             </p>
+          )}
+
+          {/* Only numeric tests have limits to plot. */}
+          {result.min_reference !== null && result.max_reference !== null && (
+            <RangeIndicator
+              value={result.value}
+              min={result.min_reference}
+              max={result.max_reference}
+              status={result.status}
+            />
           )}
 
           <dl className="explanation">

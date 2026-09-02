@@ -104,6 +104,8 @@ async def analyze_labs(labs):
             reason=explanation.reason,
             explanation=explanation.explanation,
             next_step=explanation.next_step,
+            min_reference=item.min_reference,
+            max_reference=item.max_reference,
         )
         for item, explanation in zip(routed, explanations)
     ]

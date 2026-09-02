@@ -314,3 +314,79 @@ button.secondary {
   color: #7a5b12;
   font-size: 13px;
 }
+
+/* Where the value sits on its reference range */
+
+.range-indicator {
+  margin-top: 12px;
+}
+
+.range-track {
+  position: relative;
+  height: 8px;
+  background: #eef2f6;
+  border-radius: 4px;
+}
+
+/* The normal zone is the middle third: the scale pads one range width on
+   each side, so the reference range itself always sits from 33% to 67%. */
+.range-normal {
+  position: absolute;
+  left: 33.33%;
+  width: 33.34%;
+  top: 0;
+  bottom: 0;
+  background: #d4ecdb;
+  border-left: 2px solid #2f9e57;
+  border-right: 2px solid #2f9e57;
+}
+
+.range-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #4c5661;
+}
+
+.range-marker-normal {
+  background: #2f9e57;
+}
+
+.range-marker-warning {
+  background: #d8a123;
+}
+
+.range-marker-critical {
+  background: #c0392b;
+}
+
+/* A value further out than the scale sits on the edge, widened so it reads as
+   "at least this far" rather than an exact position. */
+.range-marker-offscale {
+  width: 6px;
+  opacity: 0.85;
+}
+
+.range-scale {
+  position: relative;
+  height: 16px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #7b8794;
+}
+
+.range-limit {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.range-limit-min {
+  left: 33.33%;
+}
+
+.range-limit-max {
+  left: 66.67%;
+}

@@ -52,6 +52,11 @@ class Classification:
     status: str
     reason: str
 
+    # Kept so the frontend can draw where the value sits on its range. Only
+    # numeric tests have them.
+    min_reference: float | None = None
+    max_reference: float | None = None
+
 
 def format_number(number):
     """Keep numbers readable - plain float maths gives things like 3.90000004."""
@@ -218,6 +223,8 @@ def classify_lab_result(test_name, value, unit, reference):
         reference_range=reference.reference_range,
         status=status,
         reason=reason,
+        min_reference=reference.min_reference,
+        max_reference=reference.max_reference,
     )
 
 

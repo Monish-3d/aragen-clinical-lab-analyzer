@@ -43,6 +43,10 @@ class LabResult(BaseModel):
     explanation: str
     next_step: str
 
+    # Used by the frontend to show where the value falls on its range.
+    min_reference: float | None = None
+    max_reference: float | None = None
+
 
 class Summary(BaseModel):
     """Counts shown above the results."""
