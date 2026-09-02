@@ -246,8 +246,18 @@ something completely different from 8.1 g/dL. Matching ignores case and treats
 Google Gemini, through the `google-genai` SDK. One call per result.
 
 The prompt is given the test name, value, unit, reference range, **the
-classification** and **the reason the classifier produced**, and is told not to
-change the classification. The reply is requested as JSON matching a Pydantic
+classification**, **the reason the classifier produced**, and **the routine
+follow-up the dataset records for that test**, and is told not to change the
+classification.
+
+That last one grounds the suggested next step in the data rather than letting
+the model invent one. It needs care, because the dataset's follow-up describes
+the test in general, not the value being analysed: `Ferritin` is recorded as
+"Iron-rich diet", which is right for a normal result and badly wrong for a
+critical one. The prompt says so explicitly - use it when the result is normal,
+and suggest something matching the severity when it is not. A ferritin of 4
+therefore gets "a critical low value requires a clinical evaluation", while a
+ferritin of 45 gets "maintain a balanced, iron-rich diet". The reply is requested as JSON matching a Pydantic
 schema (`reason`, `explanation`, `next_step`), so the frontend never parses
 free text.
 
@@ -377,8 +387,9 @@ Invalid requests get a 422 with a readable message rather than a stack trace.
 
 Required columns: `Test_Name` and `Result`.
 
-Optional: `Unit`, `Reference_Range`, `Min_Reference`, `Max_Reference`. Any
-other columns are ignored, so the Kaggle dataset file can be uploaded as-is.
+Optional: `Unit`, `Reference_Range`, `Min_Reference`, `Max_Reference`,
+`Recommended_Followup`. Any other columns are ignored, so the Kaggle dataset
+file can be uploaded as-is.
 
 ```csv
 Test_Name,Result,Unit

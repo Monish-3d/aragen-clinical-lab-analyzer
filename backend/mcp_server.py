@@ -33,6 +33,7 @@ def reference_range_lookup(test_name: str) -> dict:
         "reference_range": reference.reference_range,
         "unit": reference.unit,
         "is_numeric": reference.is_numeric,
+        "recommended_followup": reference.recommended_followup,
     }
 
     # Numeric limits only exist for numeric tests, so they are left out for

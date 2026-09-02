@@ -14,6 +14,17 @@ TURKISH_TERMS = {
     "yüksek": "High",
 }
 
+# The dataset's Recommended_Followup column only ever holds these five phrases,
+# so a small lookup covers all of it. Anything unexpected is passed through
+# untranslated rather than dropped.
+FOLLOWUP_TERMS = {
+    "rutin kontrol": "Routine check-up",
+    "takip gerekmez": "No follow-up needed",
+    "mevcut düzeni koruma": "Maintain current routine",
+    "demir açısından zengin beslenme": "Iron-rich diet",
+    "tekrar idrar tahlili önerilir": "Repeat urine test recommended",
+}
+
 
 @dataclass
 class ReferenceInfo:
@@ -26,11 +37,24 @@ class ReferenceInfo:
     min_reference: float | None = None
     max_reference: float | None = None
 
+    # What the laboratory suggests for this test as routine follow-up. Comes
+    # from the dataset, so the LLM has something real to base a next step on
+    # instead of inventing one.
+    recommended_followup: str | None = None
+
 
 def translate_term(value):
     """Turn a Turkish reference/status word into English if we know it."""
     value = value.strip()
     return TURKISH_TERMS.get(value.lower(), value)
+
+
+def translate_followup(value):
+    """Same idea for the follow-up column, which holds phrases not words."""
+    value = value.strip()
+    if not value:
+        return None
+    return FOLLOWUP_TERMS.get(value.lower(), value)
 
 
 def normalize_test_name(test_name):
@@ -83,6 +107,9 @@ def load_reference_data(csv_path=DATA_FILE):
                 is_numeric=is_numeric,
                 min_reference=min_reference,
                 max_reference=max_reference,
+                recommended_followup=translate_followup(
+                    row.get("Recommended_Followup", "")
+                ),
             )
 
     return reference

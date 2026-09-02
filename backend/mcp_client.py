@@ -53,6 +53,7 @@ def build_reference(payload):
         is_numeric=payload.get("is_numeric", False),
         min_reference=payload.get("min_reference"),
         max_reference=payload.get("max_reference"),
+        recommended_followup=payload.get("recommended_followup"),
     )
 
 

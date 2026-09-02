@@ -13,7 +13,7 @@ from classifier import (
 from llm import explain_results
 from mcp_client import fetch_references
 from models import AnalyzeResponse, LabResult, Summary
-from reference_data import ReferenceInfo, translate_term
+from reference_data import ReferenceInfo, translate_followup, translate_term
 
 
 async def resolve_references(test_names):
@@ -49,6 +49,7 @@ def reference_from_input(lab):
             is_numeric=True,
             min_reference=lab.min_reference,
             max_reference=lab.max_reference,
+            recommended_followup=translate_followup(lab.recommended_followup or ""),
         )
 
     # Only a text reference, so this is a categorical test like Protein (Strip).
@@ -58,6 +59,7 @@ def reference_from_input(lab):
             unit=lab.unit or "",
             reference_range=translate_term(lab.reference_range),
             is_numeric=False,
+            recommended_followup=translate_followup(lab.recommended_followup or ""),
         )
 
     return None

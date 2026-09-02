@@ -57,6 +57,10 @@ class Classification:
     min_reference: float | None = None
     max_reference: float | None = None
 
+    # The laboratory's routine follow-up for this test, from the dataset.
+    # Passed to the LLM as grounding for the suggested next step.
+    recommended_followup: str | None = None
+
 
 def format_number(number):
     """Keep numbers readable - plain float maths gives things like 3.90000004."""
@@ -225,6 +229,7 @@ def classify_lab_result(test_name, value, unit, reference):
         reason=reason,
         min_reference=reference.min_reference,
         max_reference=reference.max_reference,
+        recommended_followup=reference.recommended_followup,
     )
 
 

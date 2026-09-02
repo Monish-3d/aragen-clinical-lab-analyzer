@@ -54,12 +54,16 @@ Value: {value} {unit}
 Reference range: {reference_range}
 Classification: {status}
 Deterministic reason: {reason}
-
+{followup_line}
 Write three things:
 1. reason - one sentence on why this value was flagged, agreeing with the
    deterministic reason above.
 2. explanation - what this result can indicate, in plain language.
-3. next_step - one reasonable next step.
+3. next_step - one reasonable next step. Where a routine follow-up is given
+   above, it is what the laboratory records for this test in general, not for
+   this particular value. Use it when the result is normal. When the result is
+   a warning or critical it is not enough on its own, so suggest something that
+   matches the severity instead.
 
 Use cautious language. A single laboratory result is not enough for a
 diagnosis, so describe what it can be associated with rather than stating what
@@ -71,6 +75,15 @@ Keep each field to one or two sentences."""
 
 def build_prompt(classification):
     """Fill the prompt with the values the classifier already worked out."""
+    # The dataset records a routine follow-up per test. Passing it in gives the
+    # model something real to base a next step on, rather than inventing one.
+    followup = classification.recommended_followup
+    followup_line = (
+        f"Laboratory's routine follow-up for this test: {followup}\n"
+        if followup
+        else ""
+    )
+
     return PROMPT_TEMPLATE.format(
         test_name=classification.test_name,
         value=classification.value,
@@ -78,6 +91,7 @@ def build_prompt(classification):
         reference_range=classification.reference_range or "not available",
         status=classification.status,
         reason=classification.reason,
+        followup_line=followup_line,
     )
 
 

@@ -22,6 +22,7 @@ class LabInput(BaseModel):
     reference_range: str | None = None
     min_reference: float | None = None
     max_reference: float | None = None
+    recommended_followup: str | None = None
 
 
 class AnalyzeRequest(BaseModel):

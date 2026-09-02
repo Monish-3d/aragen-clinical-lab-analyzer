@@ -113,6 +113,7 @@ export function readLabCsv(text) {
       reference_range: row.Reference_Range || null,
       min_reference: toNumber(row.Min_Reference),
       max_reference: toNumber(row.Max_Reference),
+      recommended_followup: row.Recommended_Followup || null,
     })
   })
 
